@@ -31,7 +31,7 @@ lein new webapp
 
 (def handler
   (proxy [AbstractHandler] []
-    (handle [target base-request request response]
+    (handle [target base-request request ^HttpServletResponse response]
       (with-open [writer (.getWriter response)]
         (.print writer "Hello World")))))
 
@@ -68,7 +68,7 @@ lein new webapp
 
 (defn- new-handler [handler]
   (proxy [AbstractHandler] []
-    (handle [target base-request request response]
+    (handle [target base-request request ^HttpServletResponse response]
       (with-open [writer (.getWriter response)]
         (.print writer (handler request))))))
 
@@ -108,7 +108,7 @@ lein new webapp
 
 (defn- new-handler [handler]
   (proxy [AbstractHandler] []
-    (handle [target base-request request response]
+    (handle [target base-request request ^HttpServletResponse response]
       (let [{:keys [status body]} (handler request)]
         (.setStatus response status)
         (with-open [writer (.getWriter response)]
@@ -151,7 +151,7 @@ lein new webapp
 
 (defn- new-handler [handler]
   (proxy [AbstractHandler] []
-    (handle [target base-request request response]
+    (handle [target base-request request ^HttpServletResponse response]
       (let [request-map (build-request-map request)
             {:keys [status body]} (handler request-map)]
         (.setStatus response status)
@@ -169,4 +169,32 @@ lein new webapp
                        " path: " (:path request))})
 ```
 
+마지막으로 응답을 HTML 형식으로 내려줘보자. 응답을 HTML으로 내려주려면 응답 해더에 Content-type을 `text/html`로 설정해야 한다. 그래서 응답 맵을 아래와 같이 내려 줄 수 있으면 좋을 것 같다.
+
+
+```clojure
+(defn handler [request]
+  {:status 201
+   :headers {"Content-Type" "text/html;charset=utf-8"}
+   :body (str
+           "<p>method: " (:method request) "</p>"
+           "<p>path: " (:path request) "</p>")})
+```
+
+그리고 Jetty 핸들러를 만드는 부분에서 응답에 `:headers`에 `Content-Type`을 가져와 `HttpServletResponse`에 `setContentType`을 불러준다.
+
+```clojure
+(defn- new-handler [handler]
+  (proxy [AbstractHandler] []
+    (handle [target base-request request ^HttpServletResponse response]
+      (let [request-map (build-request-map request)
+            {:keys [status headers body]} (handler request-map)
+            content-type (get headers "Content-Type")]
+        (.setStatus response status)
+        (.setContentType response content-type)
+        (with-open [writer (.getWriter response)]
+          (.print writer body))))))
+```
+
+이제 첫번째 웹 어플리케이션 예제는 끝났다. 정리를 해보면 Jetty 라이브러리로 핸들러를 만들어 서버를 시작했다. 그리고 Jetty에 의존적인 부분들을 `webapp.server/run-jetty` 함수로 분리했다. 분리하면서 `webapp.core`에는 `handler`라는 함수를 만들었는데 이 함수는 웹 요청을 맵 형식의 파라미터로 받고 맵 형식의 응답을 주면 되는 함수로 다른 라이브러리에 의존적이지 않는 함수로 작성했다. 물론 예제에서는 모든 요청의 값을 담지 못하고 응답에서도 역시 모든 응답 헤더를 설정해주지 않았지만 추가적으로 작업하면 되는 일이다. 실제로 위에서 작성한 `run-jetty`는 Ring 이라는 라이브러리가 제공해주는 함수이고 우리는 직접 작업하지 않고 다음 시간에 Ring 라이브러리를 가지고 작업을 계속 할 것이다.
 
