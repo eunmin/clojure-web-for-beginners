@@ -84,7 +84,7 @@ lein new webapp
       (.join))))
 ```
 
-그리고 `webap.core`는 아래와 같이 바꾼다.
+그리고 `webap.core`는 `Hello World` 문자열을 리턴하는 함수를 만들어 `run-jetty`에 파라미터로 넘기게 수정하자.
 
 ```clojure
 (ns webapp.core
@@ -98,9 +98,25 @@ lein new webapp
   (run-jetty handler))
 ```
 
-이제 웹 요청을 인자로 받아 문자열을 리턴하는 `handler` 함수를 `run-jetty` 함수에 넘겨주면 주어진 핸들러 함수로 서버가 실행된다. 
+`Ctrl+C`로 실행한 서버를 중지하고 다시 `lein run`으로 실행해서 잘 동작하는지 확인해보자.
 
-지금 만든 `handler` 함수는 항상 `200 OK` 응답이 내려간다. 만약 다른 HTTP 상태 코드를 내려주도록 만들어보자. `handler` 함수가 지금은 문자열로 리턴하게 되어 있지만 `:body`와 `:status`라는 키로 본문과 HTTP 상태 코드를 리턴하게 만들고 `run-jetty`에서 `:status` 값을 사용하게 하자.
+## 상태 코드
+
+위에서 만든 `handler` 함수는 문자열을 리턴하기 때문에 항상 `200` 상태 코드로 응답이 내려간다. 웹 어플리케이션은 다양한 상태 코드를 내려줄 수 있어야 하기 때문에 `handler` 함수가 상태 코드와 문자열을 함께 내려주도록 하자. 리턴 값을 맵으로 하고 상태 코드는 `:status` 키에 넣고 본문은 `:body` 키에 넣어 리턴하도록 하자.
+
+```clojure
+(ns webapp.core
+  (:require [webapp.server :refer [run-jetty]])
+  (:import javax.servlet.http.HttpServletRequest))
+
+(defn handler [^HttpServletRequest request]
+  {:status 201 :body "Hello World"})
+
+(defn -main [& args]
+  (run-jetty handler))
+```
+
+이제 `webapp.server/new-handler` 함수에서 `handler` 함수의 리턴 값 중 `:status` 키 값을 가져와 `HttpServletResponse`의 `setStatus` 메서드로 설정해 주자.
 
 ```clojure
 (ns webapp.server
@@ -126,23 +142,11 @@ lein new webapp
       (.join))))
 ```
 
-그리고 `webapp.core`에 `handler` 함수는 아래와 같이 리턴하도록 고친다.
-
-```clojure
-(ns webapp.core
-  (:require [webapp.server :refer [run-jetty]])
-  (:import javax.servlet.http.HttpServletRequest))
-
-(defn handler [^HttpServletRequest request]
-  {:status 201 :body "Hello World"})
-
-(defn -main [& args]
-  (run-jetty handler))
-```
-
 이제 `handler` 함수에서 상태 코드를 내려 줄 수 있게 되었다.
 
-`handler` 함수에 `HttpServletRequest` 의존성은 거슬리는 부분이다. `HttpServletRequest`를 인자로 받는 대신 `HttpServletRequest` 내용을 가진 맵을 받으면 `HttpServletRequest`의 의존도가 없어져 사용하기 더 편리할 것 같다. 예제에서는 `HttpServletRequest` 메서드 중 요청 매서드와 경로만 매핑해서 맵으로 받아보자.
+## 요청
+
+위에서 작성한 `handler` 함수의 인자는 `HttpServletRequest` 타입이다. 따라서 이 함수를 사용하려면 `HttpServletRequest` 타입 힌트를 주는 것이 좋다. 그래서 `HttpServletRequest` 의존성을 가지게 된다. 이 의존성을 해결하려면 함수 파라미터가 `HttpServletRequest` 타입이 아니고 일반 맵 타입으로 받으면 된다. 그리고 그 맵에는 요청에 대한 정보가 키로 들어 있으면 사용하기 편리할 것이다. 예제에서 요청에 모든 값을 담는 것은 의미가 없기 때문에 요청 메서드와 경로를 각각 `:method`와 `:path` 키에 담에 `handler` 함수에 전달하도록 해보자. 
 
 ```clojure
 (defn- build-request-map [^HttpServletRequest request]
@@ -160,9 +164,9 @@ lein new webapp
           (.print writer body))))))
 ```
 
-메서드와 경로는 각각 `:method`와 `:path` 키에 넣었다. `:method`는 활용하기 좋게 키워드 형식으로 바꿨고 `:path`에는 쿼리스트링까지 추가했다.
+`:method` 값은 활용하기 좋게 키워드 형식으로 바꿨고 `:path` 값은 경로에 쿼리스트링을 추가했다.
 
-이제 `Hello World` 대신 요청에 있는 메서드와 경로를 출력해보자.
+요청 맵 정보를 확인하기 위해 `Hello World` 대신 요청에 있는 메서드와 경로를 출력해보자.
 
 ```clojure
 (defn handler [request]
@@ -170,8 +174,9 @@ lein new webapp
                        " path: " (:path request))})
 ```
 
-마지막으로 응답을 HTML 형식으로 내려줘보자. 응답을 HTML으로 내려주려면 응답 해더에 Content-type을 `text/html`로 설정해야 한다. 그래서 응답 맵을 아래와 같이 내려 줄 수 있으면 좋을 것 같다.
+## 응답 헤더
 
+마지막으로 응답을 HTML 형식으로 내려줘보자. 응답을 HTML으로 내려주려면 리턴 값을 일반 문자열 대신 HTML 태그가 포함된 문자열로 내려줘야한다. 그리고 응답 해더에 Content-type을 `text/html`로 설정해야 한다. 지금은 응답 헤더를 내려줄 방법이 없지만 상태코드를 `:status` 키에 내려준 것과 같이 `:headers` 키를 만들어 다음과 같이 응답 헤더를 내려주면 좋을 것 같다.
 
 ```clojure
 (defn handler [request]
@@ -182,7 +187,7 @@ lein new webapp
            "<p>path: " (:path request) "</p>")})
 ```
 
-그리고 Jetty 핸들러를 만드는 부분에서 응답에 `:headers`에 `Content-Type`을 가져와 `HttpServletResponse`에 `setContentType`을 불러준다.
+그리고 `webapp.server/new-handler` 함수에서 `handler`의 리턴 값(= 응답 맵)에 있는 `:headers` 키 값 중 `Content-Type`을 가져와 `HttpServletResponse`에 `setContentType`에 설정해 준다.
 
 ```clojure
 (defn- new-handler [handler]
@@ -197,5 +202,9 @@ lein new webapp
           (.print writer body))))))
 ```
 
-이제 첫번째 웹 어플리케이션 예제는 끝났다. 정리를 해보면 Jetty 라이브러리로 핸들러를 만들어 서버를 시작했다. 그리고 Jetty에 의존적인 부분들을 `webapp.server/run-jetty` 함수로 분리했다. 분리하면서 `webapp.core`에는 `handler`라는 함수를 만들었는데 이 함수는 웹 요청을 맵 형식의 파라미터로 받고 맵 형식의 응답을 주면 되는 함수로 다른 라이브러리에 의존적이지 않는 함수로 작성했다. 물론 예제에서는 모든 요청의 값을 담지 못하고 응답에서도 역시 모든 응답 헤더를 설정해주지 않았지만 추가적으로 작업하면 되는 일이다. 실제로 위에서 작성한 `run-jetty`는 Ring 이라는 라이브러리가 제공해주는 함수이고 우리는 직접 작업하지 않고 다음 시간에 Ring 라이브러리를 가지고 작업을 계속 할 것이다.
+어플리케이션을 종료하고 `lein run`으로 재시작하고 브라우저에서 확인해보면 `html`형식으로 표시되는 것을 볼 수 있다. 
+
+## 정리
+
+정리를 해보면 Jetty 라이브러리로 핸들러를 만들어 `Hello World`를 출력해 줬다. 그리고 재사용을 위해 Jetty에 의존적인 부분들을 `webapp.server/run-jetty` 함수로 분리했다. 분리하면서 `webapp.core`는 요청 맵을 인자로 받고 응답 맵을 리턴 값으로 주는 `handler`라는 함수를 만들었다. 이 함수는 다른 라이브러리에 의존적이지 않는 함수다. 예제에서는 요청 맵에 `:method`와 `:path`만 추가해줬고 응답 헤더는 `Content-Type`만 처리할 수 있지만 더 작업을 하면 다른 정보들도 다룰 수 있다. 다음 시간에는 우리가 위해서 한 작업을을 미리 해둔 Ring 라이브러리를 사용해 웹 어플리케이션을 만들어 보자.
 
