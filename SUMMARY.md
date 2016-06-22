@@ -11,7 +11,7 @@
 * [Exception 미들웨어 만들기](8_exception_middleware.md)
 * [Prone 라이브러리](9_prone.md)
 * [Reload 미들웨어 만들기](10_reload_middleware.md)
-* JSON 미들웨어 사용하기
+* [JSON 미들웨어 사용하기](11_json_middleware.md)
 * Hiccup 템플릿 라이브러리
 * Selmer 템플릿 라이브러리
 * 데이터베이스
