@@ -17,5 +17,5 @@
 * [데이터베이스](14_database.md)
 * [Ragtime 라이브러리](15_ragtime.md)
 * [Component 라이브러리](16_component.md)
-* 개발 환경 분리하기
+* [개발 환경 분리하기](17_profile.md)
 
