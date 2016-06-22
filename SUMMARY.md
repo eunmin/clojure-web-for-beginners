@@ -8,7 +8,7 @@
 * [Compojure 라이브리](5_compojure.md)
 * [미들웨어](6_middleware.md)
 * [Not Found 미들웨어 만들기](7_not_found_middleware.md)
-* Exception 미들웨어 만들기
+* [Exception 미들웨어 만들기](8_exception_middleware.md)
 * Prone 라이브러리
 * Reload 미들웨어 만들기
 * JSON 미들웨어 사용하기
