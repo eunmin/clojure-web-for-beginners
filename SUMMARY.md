@@ -10,7 +10,7 @@
 * [Not Found 미들웨어 만들기](7_not_found_middleware.md)
 * [Exception 미들웨어 만들기](8_exception_middleware.md)
 * [Prone 라이브러리](9_prone.md)
-* Reload 미들웨어 만들기
+* [Reload 미들웨어 만들기](10_reload_middleware.md)
 * JSON 미들웨어 사용하기
 * Hiccup 템플릿 라이브러리
 * Selmer 템플릿 라이브러리
