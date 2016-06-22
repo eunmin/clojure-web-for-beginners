@@ -1,8 +1,8 @@
 # Hello World 웹 어플리케이션
 
-웹 개발을 위한 클로저 라이브러리들은 많이 나와 있고 이것들을 잘 이용해 많은 코드 작성 없이 웹 어플리케이션을 만들 수 있다. 처음에는 이런 라이브러리들을 이해하기 위해 클로저 라이브러리가 아닌 자바 라이브러리를 가지고 웹 어플리케이션을 만들어 보자. 클로저는 자바 라이브러리를 사용할 수 있기 때문에 Jetty 웹 라이브러리를 이용해서 Hello World 문자열을 표시하는 웹 어플리케이션을 만들어보자.
+클로저도 다른 언어들과 마찬가지로 웹 개발을 도와주는 많은 라이브러리가 있다. 이런 라이브러리를 이용하면 많은 코드를 작성하지 않아도 쉽게 웹 어플리케이션을 만들 수 있다. 이런 라이브러리들은 차차 소개하기로 하고 이번 장에서는 자바 라이브러리를 사용해 `Hello World`를 표시해주는 웹 어플리케이션을 만들어볼 것이다. Tomcat, Jetty, Undertow, Grizzly 등 다양한 웹 어플리케이션 서버 라이브러리가 있지만 여기서는 Jetty 라이브러리를 사용할 것이다. 하지만 기본적인 방식은 다른 라이브러리도 마찬가지다.
 
-Jetty 라이브러리는 [홈페이지](http://www.eclipse.org/jetty/)에 문서와 최신 버전에 대한 정보들이 잘 정리되어 있다. 이 문서를 작성하는 시점에 최신 버전인 `9.3.9.v20160517`를 사용하자.
+Jetty 라이브러리는 [홈페이지](http://www.eclipse.org/jetty/)에 문서와 다운로드에 대한 정보가 잘 정리되어 있다. 이 문서를 작성하는 때 최신 버전인 `9.3.9.v20160517`를 사용하겠다. 
 
 먼저 새로운 `leiningen` 프로젝트를 만들자.
 
@@ -10,7 +10,8 @@ Jetty 라이브러리는 [홈페이지](http://www.eclipse.org/jetty/)에 문서
 lein new webapp
 ```
 
-새 프로젝트에서 `project.clj` 파일을 열어 Jetty 라이브러리 디팬던시를 추가하자.
+새 프로젝트에서 `project.clj` 파일을 열어 Jetty 라이브러리 메이븐 의존성을 추가하자.
+
 ```clojure
 (defproject webapp "0.1.0-SNAPSHOT"
   :description "FIXME: write description"
@@ -22,7 +23,9 @@ lein new webapp
   :main webapp.core)
 ```
 
-`lein run` 커맨드로 편리하게 실행하기 위해 `:main webapp.core`를 추가했다. 이제 `leiningen` 템플릿이 생성해준 `core.clj`에 `-main`에 Jetty 핸들러와 서버를 실행하는 코드를 작성하자. 예제는 Jetty 홈페이지에 있는[ Server 예제](http://www.eclipse.org/jetty/documentation/9.3.9.v20160517/quick-start-configure.html#_jetty_ioc_xml_format)와 [Handler 설명](http://www.eclipse.org/jetty/documentation/9.3.9.v20160517/jetty-handlers.html#handler-api)을 참고해서 아래와 같이 작성했다.
+그리고 `lein run` 커맨드로 어플리케이션을 편리하게 실행하기 위해 `:main webapp.core`를 추가했다.
+이제 `leiningen` 템플릿이 만들어준 `core.clj` 파일에 `-main` 함수를 만들자.
+여기에 Jetty 홈페이지에 있는[ Server 예제](http://www.eclipse.org/jetty/documentation/9.3.9.v20160517/quick-start-configure.html#_jetty_ioc_xml_format)와 [Handler 설명](http://www.eclipse.org/jetty/documentation/9.3.9.v20160517/jetty-handlers.html#handler-api)을 참고해서 간단한 Handler와 서버를 실행하는 코드를 아래와 같이 작성하자.
 
 ```clojure
 (ns webapp.core
@@ -46,7 +49,7 @@ lein new webapp
       (.join))))
 ```
 
-파일을 저장하고 쉘에서 `lein run`을 해보면 `8080` 포트로 서버가 실행되었다는 로그가 다음과 같이 나온다.
+파일을 저장하고 쉘에서 `lein run`을 입력하면 `8080` 포트로 서버가 실행되었다는 로그가 나온다.
 
 ```bash
 2016-06-22 18:42:52.821:INFO::main: Logging initialized @759ms
@@ -55,11 +58,9 @@ lein new webapp
 2016-06-22 18:42:52.903:INFO:oejs.Server:main: Started @842ms
 ```
 
-브라우저에서 주소 창에 [localhost:8080](http://localhost:8080)를 넣어보면 `Hello World` 텍스트가 출력되는 것을 볼 수 있다.
-
-위 예제를 다시 활용 할 수 있도록 공통으로 사용할 수 있는 부분을 다른 네임스페이스로 분리해보자.
-
-`webapp.server` 네임스페이스에 공통으로 사용할 수 있는 코드를 옮기자.
+브라우저에서 주소 창에 [localhost:8080](http://localhost:8080)를 입력하면 `Hello World` 텍스트가 출력되는 것을 볼 수 있다.
+위에서 만든 예제를 재사용 할 수 있도록 `Hello World` 부분을 빼고 다른 네임스페이스에 함수로 옮겨보자. 
+네임스페이스와 함수 이름은 `webapp.server/run-jetty`가 좋을 것 같다. 옮긴 모습은 아래와 같다.
 
 ```clojure
 (ns webapp.server
