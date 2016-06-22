@@ -2,4 +2,5 @@
 
 * [Introduction](README.md)
 * [Hello World](chapter1.md)
+* Ring
 
