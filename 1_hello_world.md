@@ -49,7 +49,10 @@ lein new webapp
 파일을 저장하고 쉘에서 `lein run`을 해보면 `8080` 포트로 서버가 실행되었다는 로그가 다음과 같이 나온다.
 
 ```bash
-
+2016-06-22 18:42:52.821:INFO::main: Logging initialized @759ms
+2016-06-22 18:42:52.857:INFO:oejs.Server:main: jetty-9.3.9.v20160517
+2016-06-22 18:42:52.903:INFO:oejs.AbstractConnector:main: Started ServerConnector@f68f0dc{HTTP/1.1,[http/1.1]}{0.0.0.0:8080}
+2016-06-22 18:42:52.903:INFO:oejs.Server:main: Started @842ms
 ```
 
 브라우저에서 주소 창에 [localhost:8080](http://localhost:8080)를 넣어보면 `Hello World` 텍스트가 출력되는 것을 볼 수 있다.
