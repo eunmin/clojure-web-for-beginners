@@ -15,5 +15,5 @@
 * Hiccup 템플릿 라이브러리
 * Selmer 템플릿 라이브러리
 * 데이터베이스
-* Ragtime 마이그레이션 라이브러리
+* Ragtime 라이브러리
 
