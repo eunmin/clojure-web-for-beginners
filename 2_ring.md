@@ -52,6 +52,9 @@ lein new webapp
 
 지난번 작성한 코드랑 거의 비슷하다. 다른 점은 `handler` 함수의 파라미터인 `request` 맵에 들어있는 키 이름과 경로 형식이다. 특히 경로는 `:uri`와 `:query-string`이 분리되어 들어온다. 또 다른 점은 `run-jetty` 함수에 두번째 인자로 옵션을 받아 포트 번호 같은 것을 넘겨줬다. 그래도 지난번 직접 만든 `run-jetty`와 구조가 거의 비슷하기 때문에 `ring.adapter.jetty/run-jetty` 함수가 어떻게 구현되었을지 예상할 수 있다.
 
+## ring.util
+
+
 
 
 
