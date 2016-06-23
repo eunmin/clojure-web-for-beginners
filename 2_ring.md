@@ -8,13 +8,15 @@
 - [ring-core](https://github.com/ring-clojure/ring/tree/master/ring-core)
   - 요청 맵과 응답 맵을 다루는 함수들과 일반적으로 많이 사용하는 미들웨어를 제공한다.
 - [ring-devel](https://github.com/ring-clojure/ring/tree/master/ring-devel)
-  - 개발 환경에서 사용할 수 있는 Reload 미들웨어나 Stackstrace 미들웨어 같은 것을 제공한다.
+  - 개발 환경에서 사용할 수 있는 Reload 미들웨어나 Stackstrace 미들웨어, 더미 핸들러, 디버깅 미들웨어 같은 것을 제공한다.
 - [ring-jetty-adapter](https://github.com/ring-clojure/ring/tree/master/ring-jetty-adapter)
   - Jetty로 핸들러를 실행해 볼 수 있는 `run-jetty` 함수를 제공한다.
 - [ring-servlet](https://github.com/ring-clojure/ring/tree/master/ring-servlet)
   - 자바 요청/응답 서블릿 객체를 클로저 맵으로 바꿔주는 함수를 제공한다.
 
 Ring은 SPEC 문서와 4개 라이브러리가 있다. 지난 시간에 만든 `Hello World`를 Ring 라이브러리로 만들어 보자. 우리는 `run-jetty`만 필요하기 때문에 `ring-jetty-adapter` 라이브러리만 사용할 것이다.
+
+## ring-jetty-adapter
 
 먼저 빈 프로젝트를 만들고 `project.clj`에 `ring-jetty-adapter` 라이브러리를 추가하자.
 
@@ -52,7 +54,17 @@ lein new webapp
 
 지난번 작성한 코드랑 거의 비슷하다. 다른 점은 `handler` 함수의 파라미터인 `request` 맵에 들어있는 키 이름과 경로 형식이다. 특히 경로는 `:uri`와 `:query-string`이 분리되어 들어온다. 또 다른 점은 `run-jetty` 함수에 두번째 인자로 옵션을 받아 포트 번호 같은 것을 넘겨줬다. 그래도 지난번 직접 만든 `run-jetty`와 구조가 거의 비슷하기 때문에 `ring.adapter.jetty/run-jetty` 함수가 어떻게 구현되었을지 예상할 수 있다.
 
-## ring.util
+## ring-core
+
+ring.core에 있는
+
+ring.util.response에 redirect, not-found, response, status, header, content-type, set-cookie, , file-response, resource-response 설명하기
+
+## ring-devel
+
+## ring-servelt
+
+
 
 
 
