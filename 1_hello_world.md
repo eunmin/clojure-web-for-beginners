@@ -148,11 +148,13 @@ lein new webapp
 
 위에서 작성한 `handler` 함수의 인자는 `HttpServletRequest` 타입이다. 따라서 이 함수를 사용하려면 `HttpServletRequest` 타입 힌트를 주는 것이 좋다. 그래서 `HttpServletRequest` 의존성을 가지게 된다. 이 의존성을 해결하려면 함수 파라미터를 `HttpServletRequest` 타입이 아니고 일반 맵 타입으로 받으면 된다. 그리고 그 맵에는 요청에 대한 정보가 키로 들어 있으면 사용하기 편리할 것이다. 예제에서 요청에 모든 값을 담는 것은 의미가 없기 때문에 요청 메서드와 경로를 각각 `:method`와 `:path` 키에 담에 `handler` 함수에 전달하도록 해보자. 
 
-```clojure
+```clojure          
 (defn- build-request-map [^HttpServletRequest request]
-  {:method (keyword (lower-case (.getMethod request)))
-   :path (str (.getPathInfo request) "?"
-           (.getQueryString request))})
+  (let [query-string (.getQueryString request)]
+    {:method (keyword (lower-case (.getMethod request)))
+     :path (str (.getPathInfo request)
+                (when query-string
+                  (str "?" query-string)))}))
 
 (defn- new-handler [handler]
   (proxy [AbstractHandler] []
@@ -208,3 +210,8 @@ lein new webapp
 
 정리를 해보면 Jetty 라이브러리로 핸들러를 만들어 `Hello World`를 출력해 줬다. 그리고 재사용을 위해 Jetty에 의존적인 부분들을 `webapp.server/run-jetty` 함수로 분리했다. 분리하면서 `webapp.core`는 요청 맵을 인자로 받고 응답 맵을 리턴 값으로 주는 `handler`라는 함수를 만들었다. 이 함수는 다른 라이브러리에 의존적이지 않은 함수다. 예제에서는 요청 맵에 `:method`와 `:path`만 추가해줬고 응답 헤더는 `Content-Type`만 처리할 수 있지만 더 작업을 하면 다른 정보들도 다룰 수 있다. 다음 시간에는 우리가 위해서 한 작업을 미리 해둔 Ring 라이브러리를 사용해 웹 어플리케이션을 만들어 보자.
 
+## 예제 코드
+
+위에서 작성한 예제 코드는 아래서 받을 수 있다.
+
+https://github.com/eunmin/clojure-web-for-beginners-example/tree/master/1_hello_world/webapp
