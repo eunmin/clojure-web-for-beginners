@@ -83,7 +83,7 @@ Ring은 핸들러 함수 이전과 이후에 공통 로직을 분리해서 재�
 ```
 
 위에 예제는 핸들러 함수를 받아서 핸들러 함수를 실행하는 핸들러 함수를 리턴하는 미들웨어다. 결국 아무것도 하지 않는 미들웨어다.
-사용은 아래와 같이 하면 된다.
+사용은 아래와 같이 하면 된다. 보통 미들웨어의 이름은 `warp-`으로 시작한다.
 
 ```clojure
 (defn sample-handler [request]
@@ -91,12 +91,10 @@ Ring은 핸들러 함수 이전과 이후에 공통 로직을 분리해서 재�
    :headers {"Content-Type" "text/html"}
    :body (:remote-addr request)})
    
-(def handler (wrap-bypass-middleware sample-handler))
+(def app (wrap-bypass-middleware sample-handler))
 ```
 
-`sample-handler`를 미들웨어에 넘기면 다시 핸들러가 나오기 때문에 `handler`를 
-
-아래는 수행시간을 포함한 요청 맵을 로그에 출력하는 미들웨어 예제다.
+아래는 수행시간을 포함한 요청 맵을 로그에 출력하는 뭔가 일을 하는 미들웨어 예제다.
 
 ```clojure
 (defn wrap-processing-time [handler]
@@ -105,7 +103,57 @@ Ring은 핸들러 함수 이전과 이후에 공통 로직을 분리해서 재�
           response (handler request)]
       (log/info (assoc request :processing-time (- (System/currentTimeMillis) start-time)))
       response)))
+      
+(def app (wrap-processing-time sample-handler))
 ```
+
+만약 미들웨어를 여러개 적용하고 싶다면 연속적으로 미들웨어를 적용하면 된다.
+
+```clojure
+(def app 
+  (-> sample-handler
+      wrap-processing-time
+      warp-access-log
+      wrap-not-found))
+```
+
+미들웨어는 중첩된 함수이기 때문에 미들웨어 적용 순서가 다음과 같이 풀어보면 실행순서를 어렵지 않게 이해할 수 있다.
+
+```clojure
+(defn hello-world-handler [request]
+  (log/info "hello world handler")
+  {:status 200 :headers {} :body "Hello world"})
+
+(defn wrap-middleware1 [handler]
+  (fn [request]
+    (log/info "pre handler - middleware1")
+    (let [response (handler request)]
+      (log/info "post handler - middleware1")
+      response)))
+
+(defn wrap-middleware2 [handler]
+  (fn [request]
+    (log/info "pre handler - middleware2")
+    (let [response (handler request)]
+      (log/info "post handler - middleware2")
+      response)))
+
+(def app (-> hello-world-handler
+           wrap-middleware1
+           wrap-middleware2))
+```
+
+위와 같이 `hello-world-handler` 핸들러에 `wrap-middleware1`과 `wrap-middleware2`를 순서대로 적용한 핸들러를 실행하면 아래와 같은 순서로 로그가 출력 된다.
+
+```
+pre handler - middleware2
+pre handler - middleware1
+hello world handler
+post handler - middleware1
+post handler - middleware2
+```
+
+핸들러를 처리하기 전에 실행되는 로직은 가장 마지막에 적용한 미들웨어 부터 적용되고 핸들러를 처리한 후에 실행되는 로직은 가장 먼저 적용한 미들웨어 부터 실행되는 것을 볼 수 있다.
 
 ## 어댑터
 
