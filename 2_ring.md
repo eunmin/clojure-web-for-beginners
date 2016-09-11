@@ -1,12 +1,12 @@
 # Ring - 정리중
 
-Ring은 클로저 웹 개발을 위한 Spec과 라이브러리다. Ring이 라이브러리를 제공하긴 하지만 중요한 것은 Spec이다. 지난 시간에 `Hello World` 예제를 만들 때 요청과 응답을 클로저의 맵으로 만들었다. 요청 맵에 `:method`와 `:path` 같은 키가 있었고 응답 맵은 `:status`, `:headers`, `:body`와 같은 키를 가지고 있었다. 먼저 Ring이 정의하고 있는 요청 맵과 응답 맵의 형식을 알아보자.
+Ring은 클로저 웹 개발을 위한 Spec과 라이브러리다. Ring이 라이브러리를 제공하긴 하지만 중요한 것은 Spec이다. 지난 시간에 `Hello World` 예제를 만들 때 요청과 응답을 클로저의 맵으로 만들었다. 요청 맵에 `:method`와 `:path` 같은 키가 있었고 응답 맵은 `:status`, `:headers`, `:body`와 같은 키를 가지고 있었다. 이런 요청과 응답을 맵 형식으로 정의 한 것이 Ring Spec이다. 많은 클로저 웹 관련 라이브러리가 Ring Spec을 따르고 있기 때문에 기본 적인 Ring Spec을 알아야 웹 라이브러리를 쉽게 다룰 수 있다.
 
 ## 요청과 응답
 
 Ring은 요청과 응답 맵에 대한 키를 정의 하고 있다. 예를 들면 요청 맵에는 `:request-method`에 키워드 형식으로 요청 메서드가 들어있고 응답 맵의 상태 코드는 `:status` 키에 값으로 표현된다라는 식이다. Spec은 [여기](https://github.com/ring-clojure/ring/blob/master/SPEC)에 정의되어 있고 요청 맵과 응답 맵의 예는 다음과 같다.
 
-### 요청
+### 요청 맵의 예
 ```clojure
 {:ssl-client-cert nil
  :protocol "HTTP/1.1"
@@ -33,14 +33,20 @@ Ring은 요청과 응답 맵에 대한 키를 정의 하고 있다. 예를 들�
  :request-method :get}
 ```
 
-### 응답
+요청 맵은 요청에 대한 다양한 값들이 있다. 대부분 서블릿 Request에 있는 내용을 거의 그대로 가지고 있다. 웹 서버 어플리케이션은 보통 요청에 따라 여러가지 다양한 동작을 하도록 만들기 때문에 요청 맵에서 `:uri`, `:query-string`, `:body`, `:request-method` 같은 키를 자주 사용한다.
+
+### 응답 맵의 예
 ```clojure
 {:status 200
  :headers {"Content-Type" "text/html"}
  :body "Hello World"}
 ```
 
+응답 맵은 요청 맵 보다 단순하다. `:status`, `:headers`, `:body` 키를 정의 하고 있다. `:body`의 값은 문자열, 시퀀스, 파일, InputStream이 될 수 있다. `:status`와 `:headers`는 응답에 필수로 포함해야한다.
+
 ## 핸들러 함수
+
+### 동기 핸들러 함수
 
 Ring은 요청을 처리해 응답을 주는 함수에 대한 형식도 정의하고 있다. 이 함수를 Ring은 `handler`라고 부른다. 핸들러는 단순하게 요청 맵을 인자로 받고 응답 맵을 리턴하는 함수다. 아래는 접속 아이피 주소를 `text/html` 형식으로 출력하는 핸들러 함수다.
 
@@ -49,6 +55,56 @@ Ring은 요청을 처리해 응답을 주는 함수에 대한 형식도 정의�
   {:status 200
    :headers {"Content-Type" "text/html"}
    :body (:remote-addr request)})
+```
+
+### 비동기 핸들러 함수
+
+Ring은 비동기 핸들러 함수에 대한 형식도 정의하고 있다. 비동기 핸들러 함수는 아래와 같이 생겼다.
+
+```clojure
+(defn sample-async-handler [request respond raise]
+  (respond {:status 200
+            :headers {"Content-Type" "text/html"}
+            :body (:remote-addr request)}))
+```
+
+비동기 핸들러 함수는 `request` 외에 `respond`와 `raise` 함수를 받는다. `respond`함수는 응답을 보내는 함수이고 `raise` 함수는 예외를 보내는 함수다. 비동기 핸들러는 핸들러 함수가 종료되어도 응답이 전달되지 않고 `respond`나 `raise`함수를 불러야 응답이 전달된다. (글을 작성하는 시점에 비동기 핸들러 함수는 ring에서 만든 jetty 어댑터외에 아직 지원하는 어댑터가 없다.)
+
+## 미들웨어
+
+Ring은 핸들러 함수 이전과 이후에 공통 로직을 분리해서 재활용 할 수 있도록 미들웨어라는 Spec을 정의 했다. Ring 미들웨어는 로깅, 응답 변환, 요청 변환, 인증, 예외 처리, 라우팅등 여러가지 공통 로직들을 만드는데 사용할 수 있다. 그리고 이미 만들어 놓은 많은 미들웨어가 있기 때문에 가져다 사용할 수 있다.
+
+미들웨어는 핸들러 함수를 인자로 받아서 다시 핸들러 함수를 리턴하는 함수다.
+
+```clojure
+(defn wrap-bypass-middleware [handler]
+  (fn [request]
+    (handler request)))
+```
+
+위에 예제는 핸들러 함수를 받아서 핸들러 함수를 실행하는 핸들러 함수를 리턴하는 미들웨어다. 결국 아무것도 하지 않는 미들웨어다.
+사용은 아래와 같이 하면 된다.
+
+```clojure
+(defn sample-handler [request]
+  {:status 200
+   :headers {"Content-Type" "text/html"}
+   :body (:remote-addr request)})
+   
+(def handler (wrap-bypass-middleware sample-handler))
+```
+
+`sample-handler`를 미들웨어에 넘기면 다시 핸들러가 나오기 때문에 `handler`를 
+
+아래는 수행시간을 포함한 요청 맵을 로그에 출력하는 미들웨어 예제다.
+
+```clojure
+(defn wrap-processing-time [handler]
+  (fn [request]
+    (let [start-time (System/currentTimeMillis)
+          response (handler request)]
+      (log/info (assoc request :processing-time (- (System/currentTimeMillis) start-time)))
+      response)))
 ```
 
 ## 어댑터
@@ -92,70 +148,6 @@ Ring에서 HTTP 요청과 응답을 어떻게 맵으로 표현하고 또 HTTP �
 
 
 
-
-지난 시간에 자바 Jetty 라이브러리로 `Hell World` 웹 어플리케이션을 만들어 봤다. 지난 시간에 만들었던 `run-jetty` 함수와 `handler` 함수의 요청 맵과 응답 맵 형식은 이미 Ring 라이브러리에 구현되어 있는 기능이다. Ring 라이브러리는 요청을 처리하는 핸들러의 요청 맵과 응답 맵의 형식(예를 들면 클라이언트 IP 주소는 `:remote-addr` 키에 들어있다)을 정의 한 Spec과 이 맵을 처리하는 라이브러리들로 구성되어 있다. 그리고 편의를 위해 핸들러 함수를 Jetty로 실행 할 수 있는 어댑터도 제공한다.
-
-## Ring
-- [SPEC](https://github.com/ring-clojure/ring/blob/master/SPEC)
-  - 요청/응답 맵에 어떤 키를 사용하는지 설명되어 있다. 그리고 핸들러, 미들웨어, 어댑터에 역할에 대해 설명하고 있다.
-- [ring-core](https://github.com/ring-clojure/ring/tree/master/ring-core)
-  - 요청 맵과 응답 맵을 다루는 함수들과 일반적으로 많이 사용하는 미들웨어를 제공한다.
-- [ring-devel](https://github.com/ring-clojure/ring/tree/master/ring-devel)
-  - 개발 환경에서 사용할 수 있는 Reload 미들웨어나 Stackstrace 미들웨어, 더미 핸들러, 디버깅 미들웨어 같은 것을 제공한다.
-- [ring-jetty-adapter](https://github.com/ring-clojure/ring/tree/master/ring-jetty-adapter)
-  - Jetty로 핸들러를 실행해 볼 수 있는 `run-jetty` 함수를 제공한다.
-- [ring-servlet](https://github.com/ring-clojure/ring/tree/master/ring-servlet)
-  - 자바 요청/응답 서블릿 객체를 클로저 맵으로 바꿔주는 함수를 제공한다.
-
-Ring은 SPEC 문서와 4개 라이브러리가 있다. 지난 시간에 만든 `Hello World`를 Ring 라이브러리로 만들어 보자. 우리는 `run-jetty`만 필요하기 때문에 `ring-jetty-adapter` 라이브러리만 사용할 것이다.
-
-## ring-jetty-adapter
-
-먼저 빈 프로젝트를 만들고 `project.clj`에 `ring-jetty-adapter` 라이브러리를 추가하자.
-
-```bash
-lein new webapp
-```
-
-```clojure
-(defproject webapp "0.1.0-SNAPSHOT"
-  :description "FIXME: write description"
-  :url "http://example.com/FIXME"
-  :license {:name "Eclipse Public License"
-            :url "http://www.eclipse.org/legal/epl-v10.html"}
-  :dependencies [[org.clojure/clojure "1.8.0"]
-                 [ring/ring-jetty-adapter "1.5.0"]]
-  :main webapp.core)
-```
-
-그리고 `webapp.core` 네임스페이스에 `-main` 함수를 만들고 지난 시간 예제에서 마지막에 했던 요청 메서드와 경로를 출력해주는 코드를 작성해보자.
-
-```clojure
-(ns webapp.core
-  (:require [ring.adapter.jetty :refer [run-jetty]]))
-
-(defn handler [request]
-  {:status 201
-   :headers {"Content-Type" "text/html;charset=utf-8"}
-   :body (str
-           "<p>method: " (:request-method request) "</p>"
-           "<p>path: " (str (:uri request) "?" (:query-string request)) "</p>")})
-
-(defn -main [& args]
-  (run-jetty handler {:port 8080}))
-```
-
-지난번 작성한 코드랑 거의 비슷하다. 다른 점은 `handler` 함수의 파라미터인 `request` 맵에 들어있는 키 이름과 경로 형식이다. 특히 경로는 `:uri`와 `:query-string`이 분리되어 들어온다. 또 다른 점은 `run-jetty` 함수에 두번째 인자로 옵션을 받아 포트 번호 같은 것을 넘겨줬다. 그래도 지난번 직접 만든 `run-jetty`와 구조가 거의 비슷하기 때문에 `ring.adapter.jetty/run-jetty` 함수가 어떻게 구현되었을지 예상할 수 있다.
-
-## ring-core
-
-ring.core에 있는
-
-ring.util.response에 redirect, not-found, response, status, header, content-type, set-cookie, , file-response, resource-response 설명하기
-
-## ring-devel
-
-## ring-servelt
 
 
 
